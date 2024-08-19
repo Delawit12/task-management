@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const { JWT_SECRET } = require("../config/secrete");
+const { JWT_SECRET, JWT_EXPIRE_DATE } = require("../config/secrete");
 
 // SignIn token generator.
 /**
@@ -12,7 +12,7 @@ exports.signToken = (id, role) => {
       id: id,
       role: role,
     },
-    config.jwtSecret,
-    { expiresIn: config.jwtExpiresIn }
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRE_DATE }
   );
 };

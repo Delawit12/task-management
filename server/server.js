@@ -21,7 +21,7 @@ app.use("/uploads", express.static("uploads"));
 const userRoute = require("./routes/userRoute.js");
 const taskRoute = require("./routes/taskRoute.js");
 
-app.use("/user", userRoute);
+app.use("/api/user", userRoute);
 app.use("/task", taskRoute);
 
 /*
