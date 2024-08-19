@@ -65,6 +65,7 @@ exports.login = catchAsync(async (req, res, next) => {
     },
   });
 });
+exports.logout = catchAsync(async (req, res, next) => {});
 exports.forgetPassword = catchAsync(async (req, res, next) => {
   // enter ur email
   // accept the email from req.body

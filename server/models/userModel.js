@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema(
     },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    tasks: [{ type: Schema.Types.ObjectId, ref: "Task" }],
+    tasks: [{ type: mongoose.Types.ObjectId, ref: "Task" }],
     status: { type: Boolean, required: true, default: true },
   },
   { timestamps: true }
