@@ -3,7 +3,8 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
+    firstName: { type: String },
+    lastName: { type: String },
     title: { type: String, required: true },
     role: {
       type: String,
@@ -22,7 +23,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     tasks: [{ type: mongoose.Types.ObjectId, ref: "Task" }],
-    status: { type: Boolean, required: true, default: true },
+    status: { type: String, enum: ["active", "inactive"], default: "active" },
   },
   { timestamps: true }
 );
@@ -36,7 +37,7 @@ userSchema.pre("save", async function (next) {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-userSchema.methods.matchPassword = async function (enteredPassword) {
+userSchema.methods.correctPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
