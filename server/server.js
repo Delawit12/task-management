@@ -22,7 +22,7 @@ const userRoute = require("./routes/userRoute.js");
 const taskRoute = require("./routes/taskRoute.js");
 
 app.use("/api/user", userRoute);
-app.use("/task", taskRoute);
+app.use("/api/task", taskRoute);
 
 /*
 General error handling for syncronus code.
