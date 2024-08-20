@@ -3,9 +3,10 @@ const AppError = require("../errorHandler/appError");
 const User = require("../models/userModel");
 const Email = require("../utils/email");
 const authUtils = require("../utils/authUtils");
-
+const crypto = require("crypto");
 exports.register = catchAsync(async (req, res, next) => {
   const { title, email, password, role } = req.body;
+  console.log(role);
 
   const user = await User.findOne({ email });
   if (user) {
@@ -65,151 +66,128 @@ exports.login = catchAsync(async (req, res, next) => {
     },
   });
 });
-// exports.forgetPassword = catchAsync(async (req, res, next) => {
-//   // enter ur email
-//   // accept the email from req.body
-//   const { email } = req.body;
-//   // check if the user exist with the email
-//   const user = await User.findOne({ email });
+exports.forgetPassword = catchAsync(async (req, res, next) => {
+  // enter ur email
+  // accept the email from req.body
+  const { email } = req.body;
+  // check if the user exist with the email
+  const user = await User.findOne({ email });
 
-//   // no user: send error response
-//   if (!user) {
-//     return next(new AppError("no account found with this email", 400));
-//   }
-//   // generate 6 digit random number (OTP)
-//   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-//   user.passwordResetOtp = otp;
-//   user.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+  // no user: send error response
+  if (!user) {
+    return next(new AppError("no account found with this email", 400));
+  }
+  // generate url and send to email that contain the reset password token
+  const resetToken = await user.createPasswordResetToken();
+  console.log(resetToken);
+  console.log(req.port);
+  const resetURL = `${req.protocol}://${req.hostname}:7000/api/user/passwordReset/${resetToken}`;
+  console.log(resetURL);
+  // send that url  to the email
+  try {
+    await Email(user.email, resetURL);
+    res.status(200).json({
+      status: "success",
+      message: "url sent to email!",
+    });
+  } catch (err) {
+    console.error("Error sending resetURL email:", err);
+    user.passwordResetToken = undefined;
+    user.passwordResetExpire = undefined;
+    await user.save({ validateBeforeSave: false });
+    return res.status(500).json({
+      success: false,
+      message: "There was an error sending the url. Try again later.",
+    });
+  }
+});
 
-//   console.log("otp", otp);
+exports.passwordReset = catchAsync(async (req, res, next) => {
+  // 1) Get user based on the token
+  const hashedToken = crypto.update(req.params.token).digest("hex");
+  console.log(hashedToken);
+  const user = await User.findOne({
+    passwordResetToken: req.params.token,
+    // passwordResetExpire: { $gt: Date.now() },
+  });
+  console.log(user);
 
-//   await user.save({ validateBeforeSave: false });
+  // res.status(200).json({
+  //   status: "success",
+  //   message: "password reset successfully",
+  // });
+});
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  // accept the id from the res.locals.id ,
+  const id = res.locals.id;
+  //  accept the inputs form the req.body
+  const { currentPassword, newPassword } = req.body;
+  // get the photographer collection with the password then
+  const user = await User.findById(id).select("+password");
+  //compare the password provided and the dbPassword
+  if (!(await user.correctPassword(currentPassword, user.password))) {
+    return next(new AppError("your current password is not correct", 401));
+  }
+  if (await user.correctPassword(newPassword, user.password)) {
+    return next(
+      new AppError(
+        "please enter new  password , this is your previous password",
+        401
+      )
+    );
+  }
+  //if the current password is correct then update the password and save
+  user.password = newPassword;
+  await user.save();
+  // send response
+  res.status(200).json({
+    status: "success",
+    message: "password updated successfully",
+  });
+});
+exports.updateProfile = catchAsync(async (req, res, next) => {
+  // accept the user id from req.id
+  const id = res.locals.id;
 
-//   // send that random number to the email and hold the otp for conformation purpose
-//   try {
-//     await Email(user.email, otp);
-//     res.status(200).json({
-//       status: "success",
-//       message: "OTP sent to email!",
-//     });
-//   } catch (err) {
-//     console.error("Error sending OTP email:", err);
-//     user.passwordResetOtp = undefined;
-//     user.passwordResetExpires = undefined;
-//     await user.save({ validateBeforeSave: false });
-//     return res.status(500).json({
-//       success: false,
-//       message: "There was an error sending the OTP. Try again later.",
-//     });
-//   }
-// });
-// exports.confirmOTP = catchAsync(async (req, res, next) => {
-//   // input the send otp with email
-//   const { email, otp } = req.body;
-//   // accept the input otp and compare it with the one that is stored in the db
-//   const user = await Photographer.findOne({ email });
-
-//   if (
-//     !user ||
-//     user.passwordResetOtp !== otp ||
-//     user.passwordResetExpires < Date.now()
-//   ) {
-//     return res.status(400).json({
-//       success: false,
-//       message: "Invalid or expired OTP. Please request a new OTP.",
-//     });
-//   }
-//   // remove from the data
-//   user.passwordResetOtp = undefined;
-//   user.passwordResetExpires = undefined;
-//   await user.save({ validateBeforeSave: false });
-//   // same :send successful response
-//   res.status(200).json({
-//     status: "success",
-//     message: "OTP verified successfully.",
-//   });
-// });
-// exports.passwordReset = catchAsync(async (req, res, next) => {
-//   const { email, password } = req.body;
-//   const user = await Photographer.findOne({ email }).select("+password");
-
-//   if (await user.correctPassword(password, user.password)) {
-//     return next(new AppError("This is your previous password"));
-//   }
-
-//   user.password = password;
-//   await user.save();
-
-//   res.status(200).json({
-//     status: "success",
-//     message: "password reset successfully",
-//   });
-// });
-// exports.updatePassword = catchAsync(async (req, res, next) => {
-//   // accept the id from the req.id ,
-//   const id = req.id;
-//   //  accept the inputs form the req.body
-//   const { currentPassword, newPassword } = req.body;
-//   // get the photographer collection with the password then
-//   const user = await Photographer.findById(id).select("+password");
-//   //compare the password provided and the dbPassword
-//   if (!(await user.correctPassword(currentPassword, user.password))) {
-//     return next(new AppError("your current password is not correct", 401));
-//   }
-//   if (await user.correctPassword(newPassword, user.password)) {
-//     return next(
-//       new AppError(
-//         "please enter new  password , this is your previous password",
-//         401
-//       )
-//     );
-//   }
-//   //if the current password is correct then update the password and save
-//   user.password = newPassword;
-//   await user.save();
-//   // send response
-//   res.status(200).json({
-//     status: "success",
-//     message: "password updated successfully",
-//   });
-// });
-// exports.updateProfile = catchAsync(async (req, res, next) => {
-//   // accept the user id from req.id
-//   const id = req.id;
-
-//   // accept the updated fields from the req.body
-//   const { phoneNumber, address, bio, social_links } = req.body;
-//   // get the profilePicutre from req.file then store to the db
-//   let profilePicture;
-//   // console.log("req.files", req.files);
-//   // console.log("req.files", req.files.profilePicture);
-//   if (req.files && req.files.profilePicture) {
-//     // profilePicture = req.file.path;
-//     profilePicture = req.files.profilePicture[0].path;
-//   }
-//   console.log(req.files.profilePicture);
-//   // get the user by ID and  update then run validators  before save to the DB
-//   const user = await Photographer.findByIdAndUpdate(
-//     id,
-//     {
-//       profilePicture: profilePicture,
-//       phoneNumber: phoneNumber,
-//       address: address,
-//       bio: bio,
-//       social_links: social_links,
-//     },
-//     {
-//       new: true,
-//       runValidators: true,
-//     }
-//   );
-//   // then send response
-//   res.status(200).json({
-//     status: "success",
-//     message: "profile updated successfully",
-//     data: { user },
-//   });
-// });
+  // accept the updated fields from the req.body
+  const { firstName, lastName, phoneNumber, address } = req.body;
+  // get the profilePicutre from req.file then store to the db
+  let profilePicture;
+  console.log("req.files", req.files);
+  // console.log("req.files", req.files.profilePicture);
+  if (req.files && req.files.profilePicture) {
+    // profilePicture = req.file.path;
+    profilePicture = req.files.profilePicture[0].path;
+  }
+  // console.log(profilePicture);
+  // get the user by ID and  update then run validators  before save to the DB
+  const user = await User.findByIdAndUpdate(
+    id,
+    {
+      firstName: firstName,
+      lastName: lastName,
+      profilePicture: profilePicture,
+      phoneNumber: phoneNumber,
+      address: address,
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+  if (!user) {
+    return next(
+      new AppError("user not found may be  invalid id due to invalid token ")
+    );
+  }
+  console.log(user);
+  // then send response
+  res.status(200).json({
+    status: "success",
+    message: "profile updated successfully",
+    data: { user },
+  });
+});
 exports.deleteAccount = catchAsync(async (req, res, next) => {
   //  accept the current password
   const { currentPassword } = req.body;
@@ -230,7 +208,8 @@ exports.deleteAccount = catchAsync(async (req, res, next) => {
 exports.readUserByID = catchAsync(async (req, res, next) => {
   // get the id from req.id
   // get the user by id
-  const user = await User.findById(res.locals.id);
+  const user = await User.findById(req.params.id);
+  // console.log(user);
   // send response with the user data
   res.status(200).json({
     status: "success",
