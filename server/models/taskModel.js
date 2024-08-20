@@ -30,7 +30,7 @@ const taskSchema = new mongoose.Schema(
         },
         activity: String,
         activityCreatedDate: { type: Date, default: new Date() },
-        by: { type: Schema.Types.ObjectId, ref: "User" },
+        by: { type: mongoose.Types.ObjectId, ref: "User" },
       },
     ],
 
@@ -42,7 +42,7 @@ const taskSchema = new mongoose.Schema(
       },
     ],
     assets: [String],
-    team: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    team: [{ type: mongoose.Types.ObjectId, ref: "User" }],
     isTrashed: { type: Boolean, default: false },
   },
   { timestamps: true }
