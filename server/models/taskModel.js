@@ -37,7 +37,7 @@ const taskSchema = new mongoose.Schema(
     subTasks: [
       {
         title: String,
-        subTaskCreatedDate: Date,
+        date: Date,
         tag: String,
       },
     ],

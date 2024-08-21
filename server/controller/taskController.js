@@ -75,9 +75,92 @@ exports.duplicateTask = catchAsync(async (req, res, next) => {
     },
   });
 });
-exports.updateTask = catchAsync(async (req, res, next) => {});
-exports.postTaskActivity = catchAsync(async (req, res, next) => {});
-exports.createSubTask = catchAsync(async (req, res, next) => {});
+exports.createSubTask = catchAsync(async (req, res, next) => {
+  // get the task id from the req.params
+  const id = [req.params.id];
+  //get the request
+  const { title, date, tag } = req.body;
+  if (!title || !date || !tag) {
+    return next(new AppError("All fields are required"), 400);
+  }
+  // get task by it's id
+  const task = await Task.findById(id);
+  // :not send response
+  if (!task) {
+    return next(new AppError("no task is found with this id"), 404);
+  }
+  // then push the subtask  to the task document
+  const newSubTask = {
+    title,
+    date,
+    tag,
+  };
+  task.subTasks.push(newSubTask);
+
+  //save the change
+  await task.save();
+  //  send response
+  res.status(200).json({
+    status: "success",
+    message: "Sub-Task created successfully",
+  });
+});
+exports.postTaskActivity = catchAsync(async (req, res, next) => {
+  // get the task id from req.params.id
+  const id = req.params.id;
+
+  // get the user that add the activity from res.locals.id
+  const userId = res.locals.id;
+  // get the type of activity and the activity detail from the req.body
+  const { type, activity } = req.body;
+  // send responses like all fields are required
+
+  if (!type || !activity) {
+    return next(new AppError("All fields are required"), 400);
+  }
+  // get the task by its id
+  const task = await Task.findById(id);
+  // :not send response
+  if (!task) {
+    return next(new AppError("no task is found with this id"), 404);
+  }
+
+  // get the activities and push to the task
+  const newActivity = {
+    type,
+    activity,
+    by: userId,
+  };
+  task.activities.push(newActivity);
+  // then save the change
+  await task.save();
+  // send response
+  res.status(200).json({
+    status: "success",
+    message: "activity inserted successfully",
+  });
+});
+exports.updateTask = catchAsync(async (req, res, next) => {
+  // accept the task id from req.params.id
+  const { id } = req.params;
+  // accept the changes from the req.body
+  const update = req.body;
+  // get the task by id and update the tasks
+  const task = await Task.findByIdAndUpdate(id, update, { new: true });
+  // no response if not found
+
+  if (!task) {
+    return next(new AppError("no task is found with this id"), 404);
+  }
+  // send response
+  res.status(200).json({
+    status: "success",
+    message: "Task updated successfully",
+    data: {
+      task,
+    },
+  });
+});
 exports.allTasks = catchAsync(async (req, res, next) => {
   const tasks = await Task.find().populate("team");
   if (!tasks) {
@@ -95,7 +178,7 @@ exports.allTasks = catchAsync(async (req, res, next) => {
 });
 exports.task = catchAsync(async (req, res, next) => {
   const id = req.params.id;
-  const task = await Task.findById(id);
+  const task = await Task.findById(id).populate("team");
   if (!task) {
     return next(new AppError("no task is available by this id"));
   }
@@ -109,5 +192,3 @@ exports.task = catchAsync(async (req, res, next) => {
     },
   });
 });
-
-// exports.createTask = catchAsync(async (req, res, next) => {});
