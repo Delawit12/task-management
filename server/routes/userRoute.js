@@ -3,7 +3,7 @@ const router = express.Router();
 const userController = require("../controller/userController");
 const auth = require("../middleware/authorization");
 
-router.post("/register", auth.protect, userController.register);
+router.post("/register", auth.protect, auth.isAdmin, userController.register);
 router.post("/login", userController.login);
 router.post("/forgetPassword", userController.forgetPassword);
 router.post("/passwordReset/:token", userController.passwordReset);
