@@ -78,9 +78,18 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
     return next(new AppError("no account found with this email", 400));
   }
   // generate url and send to email that contain the reset password token
-  const resetToken = await user.createPasswordResetToken();
+  const resetToken = crypto.randomBytes(32).toString("hex");
+
+  user.passwordResetToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+  // Please note that you need to specify a time to expire this token. In this example is (10 min)
+  user.passwordResetExpire = Date.now() + 10 * 60 * 1000;
+
+  await user.save({ validateBeforeSave: false });
+
   console.log(resetToken);
-  console.log(req.port);
   const resetURL = `${req.protocol}://${req.hostname}:7000/api/user/passwordReset/${resetToken}`;
   console.log(resetURL);
   // send that url  to the email
@@ -104,19 +113,34 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
 
 exports.passwordReset = catchAsync(async (req, res, next) => {
   // 1) Get user based on the token
-  const hashedToken = crypto.update(req.params.token).digest("hex");
-  console.log(hashedToken);
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(req.params.token)
+    .digest("hex");
+  console.log(req.params.token);
   const user = await User.findOne({
-    passwordResetToken: req.params.token,
-    // passwordResetExpire: { $gt: Date.now() },
+    passwordResetToken: hashedToken,
   });
-  console.log(user);
 
-  // res.status(200).json({
-  //   status: "success",
-  //   message: "password reset successfully",
-  // });
+  // 2) If token has not expired, and there is user , set the new password
+  if (!user) {
+    return next(
+      new AppError("This token is invalid or expired, please try again!", 400)
+    );
+  }
+
+  user.password = req.body.password;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpire = undefined;
+
+  await user.save();
+
+  res.status(200).json({
+    status: "success",
+    message: "password reset successfully",
+  });
 });
+
 exports.updatePassword = catchAsync(async (req, res, next) => {
   // accept the id from the res.locals.id ,
   const id = res.locals.id;
