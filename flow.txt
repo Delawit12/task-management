@@ -1,0 +1,123 @@
+i was think it will have admin and user so below it will have the activity done by the user and the admin one by one 
+
+user : the the system all users can register by their own data:(email,password), then login by the email and the password 
+        they can edit their own profile:first name , last name , title(projectmanger,developr,accountat,lead, marketing manager)
+        change their own password : ask the current password , and new password 
+                                    compare the new password from the previous passwords and it must be new 
+
+a user can create a project or a bored so he will be the owner of the project or the project manager data:(title of the project , description of the project ) can assign team members(collaborator) to a project  remove a collaborator from a project 
+ owner of the project  can 
+        -create a task in the project so at creation 
+                -title of the task 
+                - set priority
+                - set stage
+                - insert activity
+                -add the task deadline date
+                - assets
+                -add team member for the specific task from meambers in the project 
+
+        -can update a task as required : like move from one stage to another 
+                                        change the priority of the task 
+                                        change the deadline 
+                                        can add more assets
+                                        can add additional member to the task 
+                                        or can remove member from the task 
+                
+- the owner of the project can see the tasks that moved to trash and also receive a notification when a collaborator remove task to trash then they can deleted forever or restore it back to the task list 
+- owners make the project completed when the project is done     
+
+- collaborator can see a project they are assigned 
+                -can receive  notification when they are added to a project , a task also when they are removed from a project or a task 
+                - they can see every action that is done in the project as they are the member of the project, even if they are not member of the task  otherwise no 
+                - collaborators can make a task  that they are assigned to move to trash
+                - they can make update only on the stage of the task if they are assigned to the the task
+                -
+
+- both the collaborators and the project owner can see all tasks in the project , the team member in the project ... every activity in the project 
+-both can add sub tasks for the task but for the collaborators the must be the task member too
+-both can add activity to the task  but for the collaborators the must be the task member too
+- both can filter the task by priority or stage
+-all the project members receive notification when one collaborator add activity to the task 
+- all the project member can the profile and the information of other member that is in the project 
+
+- user in the system can see all the projects they are assigned and they created even if it on going or completed
+-
+owners of a project and collaborators see dashboard analysis of a project on the dashboard : total tasks in the project 
+            - completed tasks
+            -tasks in progress
+            -to do tasks 
+            -chart by priority
+
+both the owner and the collaborator receive notification when the task deadline is passed and if the task stage is still in progress
+
+
+----------------
+In the admin side idk but i was thinking 
+- there is admin and super admins 
+- super admins only create admins 
+- both can update the status of the user( active and inactive)
+- see statistics  of the system 
+- all users in the system
+-statistics of the ongoing project and completed project : the owner of the project and how many collaborators does it have 
+---------------------------------------------------------------------------------
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+
+// User Schema
+const userSchema = new Schema({
+  first_name: String,
+  last_name: String,
+  email: { type: String, unique: true },
+  password: String,
+  title: String,
+  role: { type: String, enum: ['Admin', 'Super Admin', 'Project Owner', 'Collaborator'] },
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now }
+});
+
+// Project Schema
+const projectSchema = new Schema({
+  title: String,
+  description: String,
+  owner_id: { type: Schema.Types.ObjectId, ref: 'User' },
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now }
+});
+
+// Task Schema
+const taskSchema = new Schema({
+  title: String,
+  priority: String,
+  stage: String,
+  activity_details: String,
+  deadline_date: Date,
+  assets: [String],
+  project_id: { type: Schema.Types.ObjectId, ref: 'Project' },
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now }
+});
+
+// Task Assignment Schema
+const taskAssignmentSchema = new Schema({
+  task_id: { type: Schema.Types.ObjectId, ref: 'Task' },
+  user_id: { type: Schema.Types.ObjectId, ref: 'User' },
+  assigned_at: { type: Date, default: Date.now }
+});
+
+// Notification Schema
+const notificationSchema = new Schema({
+  user_id: { type: Schema.Types.ObjectId, ref: 'User' },
+  message: String,
+  is_read: { type: Boolean, default: false },
+  created_at: { type: Date, default: Date.now }
+});
+
+// Models
+const User = mongoose.model('User', userSchema);
+const Project = mongoose.model('Project', projectSchema);
+const Task = mongoose.model('Task', taskSchema);
+const TaskAssignment = mongoose.model('TaskAssignment', taskAssignmentSchema);
+const Notification = mongoose.model('Notification', notificationSchema);
+
+module.exports = { User, Project, Task, TaskAssignment, Notification };
+
