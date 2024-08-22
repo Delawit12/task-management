@@ -6,12 +6,13 @@ const userSchema = new mongoose.Schema(
   {
     firstName: { type: String },
     lastName: { type: String },
-    title: { type: String, required: true },
+    title: { type: String },
     role: {
       type: String,
       required: true,
       enum: [
         "admin",
+        "superAdmin",
         "manager",
         "dataAnalyst",
         "developer",

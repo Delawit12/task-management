@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const taskSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
-    taskCreatedDate: { type: Date, default: new Date() },
+    deadlineDate: { type: Date, default: new Date() },
     priority: {
       type: String,
       default: "normal",
@@ -42,7 +42,11 @@ const taskSchema = new mongoose.Schema(
       },
     ],
     assets: [String],
-    team: [{ type: mongoose.Types.ObjectId, ref: "User" }],
+    team: [
+      {
+        user: { type: mongoose.Types.ObjectId, ref: "User" },
+      },
+    ],
     isTrashed: { type: Boolean, default: false },
   },
   { timestamps: true }

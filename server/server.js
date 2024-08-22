@@ -20,9 +20,11 @@ app.use("/uploads", express.static("uploads"));
 // general routes
 const userRoute = require("./routes/userRoute.js");
 const taskRoute = require("./routes/taskRoute.js");
+const projectRoute = require("./routes/projectRoute.js");
 
 app.use("/api/user", userRoute);
 app.use("/api/task", taskRoute);
+app.use("/api/project", projectRoute);
 
 /*
 General error handling for syncronus code.

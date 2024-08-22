@@ -108,6 +108,8 @@ const taskAssignmentSchema = new Schema({
 const notificationSchema = new Schema({
   user_id: { type: Schema.Types.ObjectId, ref: 'User' },
   message: String,
+  task: { type: Schema.Types.ObjectId, ref: "Task" },
+  notiType: { type: String, default: "alert", enum: ["alert", "message"] },
   is_read: { type: Boolean, default: false },
   created_at: { type: Date, default: Date.now }
 });
